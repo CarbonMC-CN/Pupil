@@ -1,39 +1,55 @@
-<p align="center">
-  <img src="banner.png">
-</p>
+# Pupil  
+Shader support for Forge — revived, maintained, and moving forward.
 
-# Oculus
-[![](http://cf.way2muchnoise.eu/short_oculus_downloads.svg)](https://www.curseforge.com/minecraft/mc-mods/oculus)
-[![](http://cf.way2muchnoise.eu/versions/Available%20for_oculus_full.svg)](https://www.curseforge.com/minecraft/mc-mods/oculus/files)
+## What is Pupil?
 
-Oculus is an Unofficial Fork of ["Iris"](https://www.curseforge.com/minecraft/mc-mods/irisshaders), made to work with Forge Mod Loader.
+Pupil is a community-maintained continuation of Oculus, which was an unofficial port of Iris (Fabric shaders) to Forge.  
+Since Oculus development has stalled, Pupil aims to keep shader support alive on Forge for modern Minecraft versions.
 
-## Disclaimer
-Oculus is not and never will be compatible with Optifine!
+## Why "Pupil"?
+
+The pupil is the part of the eye that lets light in — small, but essential.  
+This fork is the same: a focused, community-driven project that keeps the light (and shaders) coming.
+
+## Current Status
+
+- Supports Minecraft 1.20.1 (Forge 47.2+)  
+- Compatible with Rubidium and Embedium  
+- Works with most OptiFine-format shader packs (BSL, Complementary, SEUS, etc.)  
+- Actively maintained — bugfixes and version ports welcome!
 
 ## Dependencies
-Oculus requires [Rubidium](https://www.curseforge.com/minecraft/mc-mods/rubidium) made by Asek3!
 
-## Features
-* Performance. Oculus should fully utilize your graphics card when paired with optimization mods like Rubidium.
+- **Forge** (for your Minecraft version)  
+- **Rubidium** or **Embedium** (performance rendering backend)
 
-* Mod compatibility. Oculus should make a best effort to be compatible with modded environments.
+## Installation
 
-* Backwards compatibility. All existing ShadersMod / OptiFine shader packs should just work on Oculus, without any modifications required.
+1. Install Forge for your Minecraft version  
+2. Download the latest Pupil and Rubidium/Embedium jars  
+3. Put them in your `mods` folder  
+4. Launch the game, go to Options > Shader Packs, and load your favorite shader
 
-* A well-organized codebase. I'd like for working with Oculus code to be a pleasant experience overall.
+## Reporting Issues
 
-## Discord
-[![](https://dcbadge.vercel.app/api/server/UCsyn5RS4s)](https://discord.gg/UCsyn5RS4s)
+Please use the [GitHub Issues](https://github.com/CarbonMC-CN/Pupil/issues ) page.  
+Include your Minecraft version, Forge version, Pupil version, and any relevant logs or crash reports.
 
-## Contributors
-<a href="https://github.com/Asek3/Oculus/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=Asek3/Oculus" />
-</a>
+## Building from Source
+
+```bash
+git clone https://github.com/CarbonMC-CN/Pupil.git 
+cd Pupil
+./gradlew build
+```
+The built jar will be in `build/libs/`.
 
 ## License
 
-[LGPL-3.0 license](https://github.com/Asek3/Oculus/blob/1.16.5/LICENSE)
+Pupil is licensed under the LGPL-3.0, same as Oculus and Iris.  
+This is an unofficial continuation — not affiliated with the original Oculus or Iris teams.
 
-## Consider supporting 
-[![Support me on Patreon](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fshieldsio-patreon.vercel.app%2Fapi%3Fusername%3Dasek3%26type%3Dpatrons&style=for-the-badge)](https://patreon.com/asek3)
+## Thanks
+
+To the original Iris and Oculus contributors for laying the groundwork — this project stands on their shoulders.
+    
