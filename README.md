@@ -28,7 +28,6 @@ This fork is the same: a focused, community-driven project that keeps the light 
 1. Install Forge for your Minecraft version  
 2. Download the latest Pupil and Rubidium/Embedium jars  
 3. Put them in your `mods` folder  
-4. Launch the game, go to Options > Shader Packs, and load your favorite shader
 
 ## Reporting Issues
 
