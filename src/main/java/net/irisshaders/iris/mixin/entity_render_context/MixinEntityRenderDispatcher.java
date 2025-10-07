@@ -3,11 +3,14 @@ package net.irisshaders.iris.mixin.entity_render_context;
 import com.mojang.blaze3d.vertex.PoseStack;
 import it.unimi.dsi.fastutil.objects.Object2IntFunction;
 import net.irisshaders.batchedentityrendering.impl.Groupable;
+import net.irisshaders.iris.layer.BlockEntityRenderStateShard;
+import net.irisshaders.iris.layer.BufferSourceWrapper;
 import net.irisshaders.iris.layer.EntityRenderStateShard;
 import net.irisshaders.iris.layer.OuterWrappedRenderType;
 import net.irisshaders.iris.shaderpack.materialmap.NamespacedId;
 import net.irisshaders.iris.shaderpack.materialmap.WorldRenderingSettings;
 import net.irisshaders.iris.uniforms.CapturedRenderingState;
+import net.irisshaders.iris.vertices.ImmediateState;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -29,32 +32,26 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class MixinEntityRenderDispatcher {
 	// Inject after MatrixStack#push since at this point we know that most cancellation checks have already passed.
 	@ModifyVariable(method = "render", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/PoseStack;pushPose()V", shift = At.Shift.AFTER),
-		allow = 1, require = 1)
+			allow = 1, require = 1, argsOnly = true)
 	private MultiBufferSource iris$beginEntityRender(MultiBufferSource bufferSource, Entity entity) {
-		if (!(bufferSource instanceof Groupable)) {
-			// Fully batched entity rendering is not being used, do not use this wrapper!!!
-			return bufferSource;
-		}
-
 		Object2IntFunction<NamespacedId> entityIds = WorldRenderingSettings.INSTANCE.getEntityIds();
 
-		if (entityIds == null) {
+		if (entityIds == null || !ImmediateState.isRenderingLevel) {
 			return bufferSource;
 		}
 
 		int intId;
 
 		if (entity instanceof ZombieVillager zombie && zombie.isConverting() && WorldRenderingSettings.INSTANCE.hasVillagerConversionId()) {
-			intId = entityIds.applyAsInt(new NamespacedId("minecraft"));
+			intId = entityIds.applyAsInt(new NamespacedId("minecraft", "zombie_villager_converting"));
 		} else {
 			ResourceLocation entityId = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
-			intId = entityIds.applyAsInt(new NamespacedId(entityId.getNamespace()));
+			intId = entityIds.applyAsInt(new NamespacedId(entityId.getNamespace(), entityId.getPath()));
 		}
 
 		CapturedRenderingState.INSTANCE.setCurrentEntity(intId);
 
-		return type ->
-			bufferSource.getBuffer(OuterWrappedRenderType.wrapExactlyOnce("iris:is_entity", type, EntityRenderStateShard.INSTANCE));
+		return new BufferSourceWrapper(bufferSource, (renderType) -> OuterWrappedRenderType.wrapExactlyOnce("iris:entity", renderType, EntityRenderStateShard.INSTANCE));
 	}
 
 	// Inject before MatrixStack#pop so that our wrapper stack management operations naturally line up

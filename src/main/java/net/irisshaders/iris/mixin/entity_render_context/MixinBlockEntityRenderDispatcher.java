@@ -1,13 +1,20 @@
 package net.irisshaders.iris.mixin.entity_render_context;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.irisshaders.batchedentityrendering.impl.Groupable;
+import net.irisshaders.batchedentityrendering.impl.wrappers.TaggingRenderTypeWrapper;
+import net.irisshaders.iris.Iris;
 import net.irisshaders.iris.layer.BlockEntityRenderStateShard;
+import net.irisshaders.iris.layer.BufferSourceWrapper;
 import net.irisshaders.iris.layer.OuterWrappedRenderType;
 import net.irisshaders.iris.shaderpack.materialmap.WorldRenderingSettings;
 import net.irisshaders.iris.uniforms.CapturedRenderingState;
+import net.irisshaders.iris.vertices.ImmediateState;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -25,7 +32,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(BlockEntityRenderDispatcher.class)
 public class MixinBlockEntityRenderDispatcher {
 	private static final String RUN_REPORTED =
-		"Lnet/minecraft/client/renderer/blockentity/BlockEntityRenderDispatcher;tryRender(Lnet/minecraft/world/level/block/entity/BlockEntity;Ljava/lang/Runnable;)V";
+			"Lnet/minecraft/client/renderer/blockentity/BlockEntityRenderDispatcher;tryRender(Lnet/minecraft/world/level/block/entity/BlockEntity;Ljava/lang/Runnable;)V";
 
 	// I inject here in the method so that:
 	//
@@ -36,19 +43,14 @@ public class MixinBlockEntityRenderDispatcher {
 	// NOTE: This is the last location that we can inject at, because the MultiBufferSource variable gets
 	// captured by the lambda shortly afterwards, and therefore our ModifyVariable call becomes ineffective!
 	@ModifyVariable(method = "render", at = @At(value = "INVOKE",
-		target = "Lnet/minecraft/world/level/block/entity/BlockEntityType;isValid(Lnet/minecraft/world/level/block/state/BlockState;)Z"),
-		allow = 1, require = 1, argsOnly = true)
+			target = "Lnet/minecraft/world/level/block/entity/BlockEntityType;isValid(Lnet/minecraft/world/level/block/state/BlockState;)Z"),
+			allow = 1, require = 1, argsOnly = true)
 	private MultiBufferSource iris$wrapBufferSource(MultiBufferSource bufferSource, BlockEntity blockEntity) {
-		if (!(bufferSource instanceof Groupable)) {
-			// Fully batched entity rendering is not being used, do not use this wrapper!!!
-			return bufferSource;
-		}
-
 		BlockState state = blockEntity.getBlockState();
 
 		Object2IntMap<BlockState> blockStateIds = WorldRenderingSettings.INSTANCE.getBlockStateIds();
 
-		if (blockStateIds == null) {
+		if (blockStateIds == null || !ImmediateState.isRenderingLevel) {
 			return bufferSource;
 		}
 
@@ -56,8 +58,7 @@ public class MixinBlockEntityRenderDispatcher {
 
 		CapturedRenderingState.INSTANCE.setCurrentBlockEntity(intId);
 
-		return type ->
-			bufferSource.getBuffer(OuterWrappedRenderType.wrapExactlyOnce("iris:is_block_entity", type, BlockEntityRenderStateShard.INSTANCE));
+		return new BufferSourceWrapper(bufferSource, (renderType) -> OuterWrappedRenderType.wrapExactlyOnce("iris:block_entity", renderType, BlockEntityRenderStateShard.INSTANCE));
 	}
 
 
