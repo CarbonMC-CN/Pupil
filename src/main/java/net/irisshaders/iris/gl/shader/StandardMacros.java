@@ -16,7 +16,14 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20C;
 import org.lwjgl.opengl.GL30C;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -42,7 +49,7 @@ public class StandardMacros {
 		define(standardDefines, getVendor());
 		define(standardDefines, getRenderer());
 		define(standardDefines, "IS_IRIS");
-		define(standardDefines, "IS_pupil");
+		define(standardDefines, "IS_OCULUS");
 
 
 		if (LoadingModList.get().getModFileById("distanthorizons") != null && DHCompat.hasRenderingEnabled()) {
@@ -96,7 +103,7 @@ public class StandardMacros {
 	 * Gets the current mc version String in a 5 digit format
 	 *
 	 * @return mc version string
-	 * @see <a href="https://github.com/sp614x/optifine/blob/9c6a5b5326558ccc57c6490b66b3be3b2dc8cbef/OptiFineDoc/doc/shaders.txt#L696-L699">Optifine Doc</a>
+	 * @see <a href="https://2git.xyz/sp614x/optifine/blob/9c6a5b5326558ccc57c6490b66b3be3b2dc8cbef/OptiFineDoc/doc/shaders.txt#L696-L699">Optifine Doc</a>
 	 */
 	public static String getMcVersion() {
 		String version = Iris.getReleaseTarget();
@@ -137,8 +144,8 @@ public class StandardMacros {
 	 *
 	 * @param name the name of the gl attribute to parse
 	 * @return current gl version stripped of semantic versioning
-	 * @see <a href="https://github.com/sp614x/optifine/blob/9c6a5b5326558ccc57c6490b66b3be3b2dc8cbef/OptiFineDoc/doc/shaders.txt#L701-L703">Optifine Doc for GL Version</a>
-	 * @see <a href="https://github.com/sp614x/optifine/blob/9c6a5b5326558ccc57c6490b66b3be3b2dc8cbef/OptiFineDoc/doc/shaders.txt#L705-L707">Optifine Doc for GLSL Version</a>
+	 * @see <a href="https://2git.xyz/sp614x/optifine/blob/9c6a5b5326558ccc57c6490b66b3be3b2dc8cbef/OptiFineDoc/doc/shaders.txt#L701-L703">Optifine Doc for GL Version</a>
+	 * @see <a href="https://2git.xyz/sp614x/optifine/blob/9c6a5b5326558ccc57c6490b66b3be3b2dc8cbef/OptiFineDoc/doc/shaders.txt#L705-L707">Optifine Doc for GLSL Version</a>
 	 */
 	public static String getGlVersion(int name) {
 		String info = GlStateManager._getString(name);
@@ -185,14 +192,14 @@ public class StandardMacros {
 	 * Returns the current OS String
 	 *
 	 * @return the string based on the current OS
-	 * @see <a href="https://github.com/sp614x/optifine/blob/9c6a5b5326558ccc57c6490b66b3be3b2dc8cbef/OptiFineDoc/doc/shaders.txt#L709-L714">Optifine Doc</a>
+	 * @see <a href="https://2git.xyz/sp614x/optifine/blob/9c6a5b5326558ccc57c6490b66b3be3b2dc8cbef/OptiFineDoc/doc/shaders.txt#L709-L714">Optifine Doc</a>
 	 */
 	public static String getOsString() {
 		return switch (Util.getPlatform()) {
 			case OSX -> "MC_OS_MAC";
 			case LINUX -> "MC_OS_LINUX";
 			case WINDOWS ->
-				"MC_OS_WINDOWS"; // Note: Optifine doesn't have a macro for Solaris. https://github.com/sp614x/optifine/blob/9c6a5b5326558ccc57c6490b66b3be3b2dc8cbef/OptiFineDoc/doc/shaders.txt#L709-L714
+					"MC_OS_WINDOWS"; // Note: Optifine doesn't have a macro for Solaris. https://github.com/sp614x/optifine/blob/9c6a5b5326558ccc57c6490b66b3be3b2dc8cbef/OptiFineDoc/doc/shaders.txt#L709-L714
 			default -> "MC_OS_UNKNOWN";
 		};
 	}
@@ -201,7 +208,7 @@ public class StandardMacros {
 	 * Returns a string indicating the graphics card being used
 	 *
 	 * @return the graphics card prefixed with "MC_GL_VENDOR_"
-	 * @see <a href="https://github.com/sp614x/optifine/blob/9c6a5b5326558ccc57c6490b66b3be3b2dc8cbef/OptiFineDoc/doc/shaders.txt#L716-L723">Optifine Doc</a>
+	 * @see <a href="https://2git.xyz/sp614x/optifine/blob/9c6a5b5326558ccc57c6490b66b3be3b2dc8cbef/OptiFineDoc/doc/shaders.txt#L716-L723">Optifine Doc</a>
 	 */
 	public static String getVendor() {
 		String vendor = Objects.requireNonNull(GlUtil.getVendor()).toLowerCase(Locale.ROOT);
@@ -223,7 +230,7 @@ public class StandardMacros {
 	 * Returns the graphics driver being used
 	 *
 	 * @return graphics driver prefixed with "MC_GL_RENDERER_"
-	 * @see <a href="https://github.com/sp614x/optifine/blob/9c6a5b5326558ccc57c6490b66b3be3b2dc8cbef/OptiFineDoc/doc/shaders.txt#L725-L733">Optifine Doc</a>
+	 * @see <a href="https://2git.xyz/sp614x/optifine/blob/9c6a5b5326558ccc57c6490b66b3be3b2dc8cbef/OptiFineDoc/doc/shaders.txt#L725-L733">Optifine Doc</a>
 	 */
 	public static String getRenderer() {
 		String renderer = Objects.requireNonNull(GlUtil.getRenderer()).toLowerCase(Locale.ROOT);
@@ -256,7 +263,7 @@ public class StandardMacros {
 	 * This is done by calling {@link GL11#glGetString} with the arg {@link GL11#GL_EXTENSIONS}
 	 *
 	 * @return set of activated extensions prefixed with "MC_"
-	 * @see <a href="https://github.com/sp614x/optifine/blob/9c6a5b5326558ccc57c6490b66b3be3b2dc8cbef/OptiFineDoc/doc/shaders.txt#L735-L738">Optifine Doc</a>
+	 * @see <a href="https://2git.xyz/sp614x/optifine/blob/9c6a5b5326558ccc57c6490b66b3be3b2dc8cbef/OptiFineDoc/doc/shaders.txt#L735-L738">Optifine Doc</a>
 	 */
 	public static Set<String> getGlExtensions() {
 		// In OpenGL Core, we must use a new way of retrieving extensions.

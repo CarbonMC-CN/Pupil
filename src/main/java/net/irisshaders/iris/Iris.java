@@ -62,7 +62,7 @@ import java.util.zip.ZipException;
 
 @Mod(Iris.MODID)
 public class Iris {
-	public static final String MODID = "pupil";
+	public static final String MODID = "oculus";
 
 	/**
 	 * The user-facing name of the mod. Moved into a constant to facilitate

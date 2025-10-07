@@ -4,11 +4,11 @@ issueTrackerURL="https://github.com/CarbonMC-CN/Pupil/issues"
 license="LGPL-3.0-only"
 
 [[mods]]
-modId="pupil"
+modId="oculus"
 version="${version}"
 #displayURL = "https://curseforge.com/minecraft/mc-mods/pupil"
 displayName="Pupil"
-logoFile= "../iris-logo.png"
+logoFile= "pupil-logo.png"
 authors="NanoLive, dima_dencep, coderbot, IMS212, Justsnoopy30, FoundationGames"
 description='''
 Pupil is a community-maintained continuation of Oculus
@@ -20,14 +20,14 @@ provides = ["iris"]
 "mixin.features.render.entity"=false
 "mixin.features.render.gui.font"=false
 
-[[dependencies.pupil]]
+[[dependencies.oculus]]
 modId = "minecraft"
 mandatory = true
 versionRange = "[1.20.1]"
 ordering = "NONE"
 side = "BOTH"
 
-[[dependencies.pupil]]
+[[dependencies.oculus]]
 modId = "embeddium"
 mandatory = false
 versionRange = "[0.3.1,)"
