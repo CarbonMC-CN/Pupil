@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(VertexFormatDescriptionImpl.class)
 public class MixinVertexFormatDescriptionImpl { // TODO pupil: Deleted?
 	// A better fix would be to treat IrisVertexFormats.PADDING_SHORT as padding, but this works too.
-	@Inject(remap = false, method = "checkSimple", at = @At("HEAD"), cancellable = true)
+	@Inject(remap = false, method = "checkSimple", at = @At("HEAD"), cancellable = true,require = 0)
 	private static void iris$forceSimple(VertexFormat format, CallbackInfoReturnable<Boolean> cir) {
 		if (format == IrisVertexFormats.TERRAIN || format == IrisVertexFormats.ENTITY || format == IrisVertexFormats.GLYPH) {
 			cir.setReturnValue(true);

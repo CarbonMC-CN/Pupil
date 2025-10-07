@@ -26,7 +26,7 @@
     "options.MixinOptionImpl",
     "options.MixinRenderSectionManager",
     "options.MixinSodiumGameOptionPages",
-    "options.MixinSodiumGameOptions",
+    "options.MixinEmbeddiumGameOptions",
     "options.MixinSodiumOptionsGUI",
     "pbr_animation.MixinSpriteContents",
     "shader_overrides.MixinChunkBuilderMeshingTask",

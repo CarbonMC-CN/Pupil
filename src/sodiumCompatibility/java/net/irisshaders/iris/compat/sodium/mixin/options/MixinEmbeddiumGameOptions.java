@@ -14,8 +14,8 @@ import java.io.IOException;
  * Max Shadow Distance setting.
  */
 @Mixin(SodiumGameOptions.class)
-public class MixinSodiumGameOptions {
-	@Inject(method = "writeToDisk", at = @At("RETURN"), remap = false)
+public class MixinEmbeddiumGameOptions {
+	@Inject(method = "writeToDisk", at = @At("RETURN"), remap = false,require = 0)
 	private static void iris$writeIrisConfig(CallbackInfo ci) {
 		try {
 			if (Iris.getIrisConfig() != null) {
