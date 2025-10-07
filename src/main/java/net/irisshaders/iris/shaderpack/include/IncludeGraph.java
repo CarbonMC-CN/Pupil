@@ -2,6 +2,8 @@ package net.irisshaders.iris.shaderpack.include;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import it.unimi.dsi.fastutil.ints.*;
+import it.unimi.dsi.fastutil.objects.*;
 import net.irisshaders.iris.Iris;
 import net.irisshaders.iris.shaderpack.error.RusticError;
 import net.irisshaders.iris.shaderpack.transform.line.LineTransform;
@@ -10,253 +12,267 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 
-/**
- * A directed graph data structure that holds the loaded source of all shader programs
- * and the files included by each source file. Each node / vertex in the graph
- * corresponds to a single file in the shader pack, and each edge / connection
- * corresponds to an {@code #include} directive on a given line.
- *
- * <p>Using a proper graph representation allows us to apply existing and
- * efficient algorithms with well-known properties to various tasks and
- * transformations necessary during shader pack loading. We receive a number of
- * immediate benefits from using a graph-based representation:</p>
- *
- * <ul>
- *     <li>Each file is read exactly one time, and it is only necessary to
- *         parse #include directives from a file once. This ensures efficient
- *         IO.
- *         </li>
- *     <li>Deferring the processing of inclusions allows transformers that only
- *         need to replace single lines at a time to operate more efficiently,
- *         avoiding processing lines duplicated across many files more than
- *         necessary.
- *         </li>
- *     <li>As a result, our shader configuration system is able to process and
- *         apply options much more efficiently than a naive one operating on
- *         included files only, allowing many operations to scale much more
- *         nicely, especially in the common case of shader pack authors having
- *         a single large settings file defining every config option that is
- *         then included in every shader program in the pack.
- *         </li>
- *     <li>Deferred processing of inclusions also allows the shader pack loader
- *         to reason about cyclic inclusions, allowing us to remove the
- *         arbitrary file include depth limit, and avoid stack overflows due to
- *         infinite recursion that a naive implementation might be subject to.
- *         </li>
- * </ul>
- */
-public class IncludeGraph {
+public final class IncludeGraph {
+	private static final IncludeGraph EMPTY = new IncludeGraph(
+			ImmutableMap.of(), ImmutableMap.of(), new int[0], new AbsolutePackPath[0], new int[0]);
 	private final ImmutableMap<AbsolutePackPath, FileNode> nodes;
 	private final ImmutableMap<AbsolutePackPath, RusticError> failures;
+	private final int[] adjacency;
+	private final AbsolutePackPath[] vertex;
+	private final int[] offset;
 
-	private IncludeGraph(ImmutableMap<AbsolutePackPath, FileNode> nodes,
-						 ImmutableMap<AbsolutePackPath, RusticError> failures) {
-		this.nodes = nodes;
-		this.failures = failures;
-	}
-
-	public IncludeGraph(Path root, ImmutableList<AbsolutePackPath> startingPaths) {
-		Map<AbsolutePackPath, AbsolutePackPath> cameFrom = new HashMap<>();
-		Map<AbsolutePackPath, Integer> lineNumberInclude = new HashMap<>();
-
-		Map<AbsolutePackPath, FileNode> nodes = new HashMap<>();
-		Map<AbsolutePackPath, RusticError> failures = new HashMap<>();
-
-		List<AbsolutePackPath> queue = new ArrayList<>(startingPaths);
-		Set<AbsolutePackPath> seen = new HashSet<>(startingPaths);
-
-		while (!queue.isEmpty()) {
-			AbsolutePackPath next = queue.remove(queue.size() - 1);
-
-			String source;
-
-			try {
-				source = readFile(next.resolved(root));
-			} catch (IOException e) {
-				AbsolutePackPath src = cameFrom.get(next);
-
-				if (src == null) {
-					throw new RuntimeException("unexpected error: failed to read " + next.getPathString(), e);
-				}
-
-				String topLevelMessage;
-				String detailMessage;
-
-				if (e instanceof NoSuchFileException) {
-					topLevelMessage = "failed to resolve #include directive";
-					detailMessage = "file not found";
-				} else {
-					topLevelMessage = "unexpected I/O error while resolving #include directive: " + e;
-					detailMessage = "IO error";
-				}
-
-				String badLine = nodes.get(src).getLines().get(lineNumberInclude.get(next)).trim();
-
-				RusticError topLevelError = new RusticError("error", topLevelMessage, detailMessage, src.getPathString(),
-					lineNumberInclude.get(next) + 1, badLine);
-
-				failures.put(next, topLevelError);
-
-				continue;
-			}
-
-			ImmutableList<String> lines = ImmutableList.copyOf(source.split("\\R"));
-
-			FileNode node = new FileNode(next, lines);
-			boolean selfInclude = false;
-
-			for (Map.Entry<Integer, AbsolutePackPath> include : node.getIncludes().entrySet()) {
-				int line = include.getKey();
-				AbsolutePackPath included = include.getValue();
-
-				if (next.equals(included)) {
-					selfInclude = true;
-					failures.put(next, new RusticError("error", "trivial #include cycle detected",
-						"file includes itself", next.getPathString(), line + 1, lines.get(line)));
-
-					break;
-				} else if (!seen.contains(included)) {
-					queue.add(included);
-					seen.add(included);
-					cameFrom.put(included, next);
-					lineNumberInclude.put(included, line);
-				}
-			}
-
-			if (!selfInclude) {
-				nodes.put(next, node);
-			}
+	public IncludeGraph(Path root, ImmutableList<AbsolutePackPath> starts) {
+		if (starts.isEmpty()) {
+			this.nodes = ImmutableMap.of();
+			this.failures = ImmutableMap.of();
+			this.adjacency = new int[0];
+			this.vertex = new AbsolutePackPath[0];
+			this.offset = new int[0];
+			return;
 		}
-
-		this.nodes = ImmutableMap.copyOf(nodes);
-		this.failures = ImmutableMap.copyOf(failures);
-
-		detectCycle();
+		Builder b = new Builder(root, starts);
+		this.nodes = ImmutableMap.copyOf(b.nodes);
+		this.failures = ImmutableMap.copyOf(b.failures);
+		this.adjacency = b.adjacency.toIntArray();
+		this.vertex = b.vertex.toArray(new AbsolutePackPath[0]);
+		this.offset = buildOffset(adjacency, vertex.length);
 	}
 
-	private static String readFile(Path path) throws IOException {
-		return Files.readString(path);
-	}
-
-	private void detectCycle() {
-		List<AbsolutePackPath> cycle = new ArrayList<>();
-		Set<AbsolutePackPath> visited = new HashSet<>();
-
-		for (AbsolutePackPath start : nodes.keySet()) {
-			if (exploreForCycles(start, cycle, visited)) {
-				AbsolutePackPath lastFilePath = null;
-
-				StringBuilder error = new StringBuilder();
-
-				for (AbsolutePackPath node : cycle) {
-					if (lastFilePath == null) {
-						lastFilePath = node;
-						continue;
-					}
-
-					FileNode lastFile = nodes.get(lastFilePath);
-					int lineNumber = -1;
-
-					for (Map.Entry<Integer, AbsolutePackPath> include : lastFile.getIncludes().entrySet()) {
-						if (include.getValue() == node) {
-							lineNumber = include.getKey() + 1;
-						}
-					}
-
-					String badLine = lastFile.getLines().get(lineNumber - 1);
-
-					String detailMessage = node.equals(start) ? "final #include in cycle" : "#include involved in cycle";
-
-					if (lastFilePath.equals(start)) {
-						// first node in cycle
-						error.append(new RusticError("error", "#include cycle detected",
-							detailMessage, lastFilePath.getPathString(), lineNumber, badLine));
-					} else {
-						error.append("\n  = ").append(new RusticError("note", "cycle involves another file",
-							detailMessage, lastFilePath.getPathString(), lineNumber, badLine));
-					}
-
-					lastFilePath = node;
-				}
-
-				error.append(
-					"""
-						  note: #include directives are resolved before any other preprocessor directives, any form of #include guard will not work
-
-						  note: other cycles may still exist, only the first detected non-trivial cycle will be reported
-						""");
-
-				// TODO: Expose this to the caller (more semantic error handling)
-				Iris.logger.error(error.toString());
-
-				throw new IllegalStateException("Cycle detected in #include graph, see previous messages for details");
-			}
-		}
-	}
-
-	private boolean exploreForCycles(AbsolutePackPath frontier, List<AbsolutePackPath> path, Set<AbsolutePackPath> visited) {
-		if (visited.contains(frontier)) {
-			path.add(frontier);
-			return true;
-		}
-
-		path.add(frontier);
-		visited.add(frontier);
-
-		for (AbsolutePackPath included : nodes.get(frontier).getIncludes().values()) {
-			if (!nodes.containsKey(included)) {
-				// file that failed to load for another reason, error should already be reported
-				continue;
-			}
-
-			if (exploreForCycles(included, path, visited)) {
-				return true;
-			}
-		}
-
-		path.remove(path.size() - 1);
-		visited.remove(frontier);
-
-		return false;
-	}
-
-	public ImmutableMap<AbsolutePackPath, FileNode> getNodes() {
-		return nodes;
-	}
+	public ImmutableMap<AbsolutePackPath, FileNode> getNodes() { return nodes; }
+	public ImmutableMap<AbsolutePackPath, RusticError> getFailures() { return failures; }
 
 	public List<IncludeGraph> computeWeaklyConnectedComponents() {
-		//List<IncludeGraph> components = new ArrayList<>();
-
-		// TODO: WCC
-		//throw new UnsupportedOperationException();
-
-		//return components;
-
-		// TODO: This digraph might not be weakly connected
-		//       A digraph is weakly connected if its corresponding undirected
-		//       graph is connected
-		//       Make an adjacency list and then go from there
-		return Collections.singletonList(this);
+		int n = vertex.length;
+		if (n == 0) return List.of(EMPTY);
+		UnionFind uf = new UnionFind(n);
+		for (int u = 0; u < n; u++) {
+			int b = offset[u], e = offset[u + 1];
+			for (int i = b; i < e; i++) uf.union(u, adjacency[i]);
+		}
+		Int2ObjectMap<IncludeGraph> components = new Int2ObjectOpenHashMap<>();
+		for (int u = 0; u < n; u++) {
+			int root = uf.find(u);
+			if (!components.containsKey(root)) {
+				components.put(root, extractComponent(root, uf));
+			}
+		}
+		return List.copyOf(components.values());
 	}
 
 	public IncludeGraph map(Function<AbsolutePackPath, LineTransform> transformProvider) {
-		ImmutableMap.Builder<AbsolutePackPath, FileNode> mappedNodes = ImmutableMap.builder();
-
-		nodes.forEach((path, node) -> mappedNodes.put(path, node.map(transformProvider.apply(path))));
-
-		return new IncludeGraph(mappedNodes.build(), failures);
+		ImmutableMap.Builder<AbsolutePackPath, FileNode> b = ImmutableMap.builder();
+		nodes.forEach((p, n) -> b.put(p, n.map(transformProvider.apply(p))));
+		return new IncludeGraph(b.build(), failures, adjacency, vertex, offset);
 	}
 
-	public ImmutableMap<AbsolutePackPath, RusticError> getFailures() {
-		return failures;
+	private static final class UnionFind {
+		private final int[] parent;
+		UnionFind(int n) {
+			parent = new int[n];
+			for (int i = 0; i < n; i++) parent[i] = i;
+		}
+		int find(int x) { return parent[x] == x ? x : (parent[x] = find(parent[x])); }
+		void union(int x, int y) { parent[find(x)] = find(y); }
+	}
+
+	private IncludeGraph(ImmutableMap<AbsolutePackPath, FileNode> nodes,
+						 ImmutableMap<AbsolutePackPath, RusticError> failures,
+						 int[] adjacency,
+						 AbsolutePackPath[] vertex,
+						 int[] offset) {
+		this.nodes = nodes;
+		this.failures = failures;
+		this.adjacency = adjacency;
+		this.vertex = vertex;
+		this.offset = offset;
+	}
+
+	private static final class Builder {
+		final Path root;
+		final Object2ObjectMap<AbsolutePackPath, FileNode> nodes = new Object2ObjectOpenHashMap<>();
+		final Object2ObjectMap<AbsolutePackPath, RusticError> failures = new Object2ObjectOpenHashMap<>();
+		final IntArrayList adjacency = new IntArrayList();
+		final ObjectArrayList<AbsolutePackPath> vertex = new ObjectArrayList<>();
+		final Object2IntMap<AbsolutePackPath> idOf = new Object2IntOpenHashMap<>(256, 0.75f);
+		final ObjectArrayList<IntArrayList> edges;
+
+		Builder(Path root, ImmutableList<AbsolutePackPath> starts) {
+			this.root = root;
+			idOf.defaultReturnValue(-1);
+			int est = Math.min(starts.size() * 4, 256);
+			edges = new ObjectArrayList<>(est);
+			edges.size(est);
+			Deque<AbsolutePackPath> queue = new ArrayDeque<>(starts);
+			Set<AbsolutePackPath> seen = new HashSet<>(est);
+			for (AbsolutePackPath s : starts) {
+				if (seen.add(s)) queue.addLast(s);
+			}
+			while (!queue.isEmpty()) {
+				AbsolutePackPath cur = queue.removeFirst();
+				int u = vertexId(cur);
+				FileNode node = loadNode(cur);
+				if (node == null) continue;
+				for (var inc : node.getIncludes().entrySet()) {
+					int line = inc.getKey();
+					AbsolutePackPath target = inc.getValue();
+					if (Objects.equals(cur, target)) {
+						recordFailure(cur, line);
+						continue;
+					}
+					int v = vertexId(target);
+					edges.get(u).add(v);
+					if (seen.add(target)) queue.addLast(target);
+				}
+			}
+			compact();
+			detectCycle();
+		}
+
+		private int vertexId(AbsolutePackPath p) {
+			int id = idOf.getInt(p);
+			if (id != -1) return id;
+			id = vertex.size();
+			vertex.add(p);
+			idOf.put(p, id);
+			if (id >= edges.size()) edges.size(id * 2);
+			if (edges.get(id) == null) edges.set(id, new IntArrayList(4));
+			return id;
+		}
+
+		private FileNode loadNode(AbsolutePackPath p) {
+			if (nodes.containsKey(p)) return nodes.get(p);
+			try {
+				String src = Files.readString(p.resolved(root));
+				FileNode node = new FileNode(p, ImmutableList.copyOf(src.split("\\R", -1)));
+				nodes.put(p, node);
+				return node;
+			} catch (IOException e) {
+				String top = (e instanceof NoSuchFileException) ? "file not found" : "I/O error";
+                RusticError err = new RusticError("error", "failed to resolve #include", top,
+						p.getPathString(), -1, null);
+				failures.put(p, err);
+				return null;
+			}
+		}
+
+		private void recordFailure(AbsolutePackPath p, int line) {
+			failures.put(p, new RusticError("error", "trivial #include cycle", "file includes itself", p.getPathString(), line + 1,
+					nodes.get(p).getLines().get(line)));
+		}
+
+		private void compact() {
+			int n = vertex.size();
+			for (int u = 0; u < n; u++) {
+				IntArrayList lst = edges.get(u);
+				if (lst == null || lst.isEmpty()) continue;
+				adjacency.addElements(adjacency.size(), lst.elements(), 0, lst.size());
+			}
+		}
+
+		private void detectCycle() {
+			int n = vertex.size();
+			if (n == 0) return;
+			IntSet onStack = new IntOpenHashSet(n);
+			IntArrayList stack = new IntArrayList(n);
+			Int2IntMap parent = new Int2IntOpenHashMap(n);
+			parent.defaultReturnValue(-1);
+			IntArrayList path = new IntArrayList(n);
+			for (int start = 0; start < n; start++) {
+				if (parent.containsKey(start)) continue;
+				stack.push(start);
+				parent.put(start, -1);
+				while (!stack.isEmpty()) {
+					int u = stack.pop();
+					if (onStack.contains(u)) {
+						extractCycle(u, parent, path);
+						return;
+					}
+					onStack.add(u);
+					int b = offset(u), e = offset(u + 1);
+					for (int i = b; i < e; i++) {
+						int v = adjacency.getInt(i);
+						if (!parent.containsKey(v)) {
+							parent.put(v, u);
+							stack.push(v);
+						}
+					}
+				}
+				onStack.clear();
+			}
+		}
+
+		private void extractCycle(int meet, Int2IntMap parent, IntArrayList path) {
+			for (int u = meet; u != -1; u = parent.get(u)) path.add(u);
+			Collections.reverse(path);
+			StringBuilder err = new StringBuilder();
+			for (int i = 0, n = path.size(); i < n; i++) {
+				int u = path.getInt(i);
+				AbsolutePackPath p = vertex.get(u);
+				FileNode node = nodes.get(p);
+				int line = -1;
+				String badLine = "";
+				if (i > 0) {
+					int prev = path.getInt(i - 1);
+					for (var e : nodes.get(vertex.get(prev)).getIncludes().entrySet()) {
+						if (e.getValue().equals(p)) {
+							line = e.getKey() + 1;
+							badLine = node.getLines().get(line - 1);
+							break;
+						}
+					}
+				}
+				String kind = (i == 0) ? "error" : "note";
+				String msg = (i == 0) ? "#include cycle detected" : "cycle involves another file";
+				err.append(new RusticError(kind, msg, (i == 0) ? "cycle" : "continues",
+						p.getPathString(), line, badLine)).append('\n');
+			}
+			err.append("note: #include guards will not work\n");
+			Iris.logger.error(err.toString());
+			throw new IllegalStateException("Cycle in #include graph, see log");
+		}
+
+		private int offset(int u) {
+			int off = 0;
+			for (int i = 0; i < u && i < vertex.size(); i++)
+				off += degree(i);
+			return off;
+		}
+
+		private int degree(int u) {
+			IntArrayList lst = edges.get(u);
+			return (lst == null) ? 0 : lst.size();
+		}
+	}
+
+	private IncludeGraph extractComponent(int root, UnionFind uf) {
+		ImmutableMap.Builder<AbsolutePackPath, FileNode> subNodes = ImmutableMap.builder();
+		ImmutableMap.Builder<AbsolutePackPath, RusticError> subFails = ImmutableMap.builder();
+		for (int u = 0; u < vertex.length; u++) {
+			if (uf.find(u) == root) {
+				AbsolutePackPath p = vertex[u];
+				subNodes.put(p, Objects.requireNonNull(nodes.get(p)));
+				if (failures.containsKey(p)) subFails.put(p, Objects.requireNonNull(failures.get(p)));
+			}
+		}
+		return new IncludeGraph(subNodes.build(), subFails.build(), new int[0], new AbsolutePackPath[0], new int[0]);
+	}
+
+	private static int[] buildOffset(int[] adj, int n) {
+		int[] off = new int[n + 1];
+		int pos = 0;
+		for (int u = 0; u < n; u++) {
+			int end = (u + 1 < n ? findNextOffset(adj) : adj.length);
+			off[u] = pos;
+			pos = end;
+		}
+		off[n] = adj.length;
+		return off;
+	}
+
+	private static int findNextOffset(int[] adj) {
+		return adj.length;
 	}
 }

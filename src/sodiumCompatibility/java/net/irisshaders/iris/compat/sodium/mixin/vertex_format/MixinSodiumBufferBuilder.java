@@ -10,11 +10,7 @@ import net.caffeinemc.mods.sodium.api.vertex.format.VertexFormatDescription;
 import net.irisshaders.iris.compat.sodium.impl.vertex_format.IrisCommonVertexAttributes;
 import net.irisshaders.iris.compat.sodium.impl.vertex_format.SodiumBufferBuilderPolygonView;
 import net.irisshaders.iris.uniforms.CapturedRenderingState;
-import net.irisshaders.iris.vertices.BlockSensitiveBufferBuilder;
-import net.irisshaders.iris.vertices.ExtendedDataHelper;
-import net.irisshaders.iris.vertices.IrisExtendedBufferBuilder;
-import net.irisshaders.iris.vertices.NormI8;
-import net.irisshaders.iris.vertices.NormalHelper;
+import net.irisshaders.iris.vertices.*;
 import org.joml.Vector3f;
 import org.lwjgl.system.MemoryUtil;
 import org.spongepowered.asm.mixin.Final;
@@ -26,7 +22,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(SodiumBufferBuilder.class)
-public abstract class MixinSodiumBufferBuilder implements BlockSensitiveBufferBuilder { // TODO OCULUS: Deleted?
+public abstract class MixinSodiumBufferBuilder implements BlockSensitiveBufferBuilder { // TODO pupil: Deleted?
 	@Unique
 	private static final int
 		ATTRIBUTE_TANGENT_BIT = 1 << IrisCommonVertexAttributes.TANGENT.ordinal(),

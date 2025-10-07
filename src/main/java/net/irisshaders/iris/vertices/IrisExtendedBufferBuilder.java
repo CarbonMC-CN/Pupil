@@ -2,7 +2,7 @@ package net.irisshaders.iris.vertices;
 
 import com.mojang.blaze3d.vertex.VertexFormat;
 
-public interface IrisExtendedBufferBuilder { // TODO OCULUS: Deleted?
+public interface IrisExtendedBufferBuilder { // TODO pupil: Deleted?
 	VertexFormat iris$format();
 
 	VertexFormat.Mode iris$mode();

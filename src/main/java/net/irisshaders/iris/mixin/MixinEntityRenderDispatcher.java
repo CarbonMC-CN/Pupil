@@ -15,7 +15,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Quaternionf;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -30,10 +29,10 @@ public class MixinEntityRenderDispatcher {
 		"Lnet/minecraft/client/renderer/entity/EntityRenderDispatcher;renderBlockShadow(Lcom/mojang/blaze3d/vertex/PoseStack$Pose;Lcom/mojang/blaze3d/vertex/VertexConsumer;Lnet/minecraft/world/level/chunk/ChunkAccess;Lnet/minecraft/world/level/LevelReader;Lnet/minecraft/core/BlockPos;DDDFF)V";
 
 	@Unique
-	private static final NamespacedId shadowId = new NamespacedId("minecraft", "entity_shadow");
+	private static final NamespacedId shadowId = new NamespacedId("minecraft");
 
 	@Unique
-	private static final NamespacedId flameId = new NamespacedId("minecraft", "entity_flame");
+	private static final NamespacedId flameId = new NamespacedId("minecraft");
 
 	@Unique
 	private static int cachedId;

@@ -4,7 +4,7 @@ import net.caffeinemc.mods.sodium.api.vertex.attributes.common.PositionAttribute
 import net.caffeinemc.mods.sodium.api.vertex.attributes.common.TextureAttribute;
 import net.irisshaders.iris.vertices.views.QuadView;
 
-public class SodiumBufferBuilderPolygonView implements QuadView { // TODO OCULUS: Deleted?
+public class SodiumBufferBuilderPolygonView implements QuadView { // TODO pupil: Deleted?
 	private long ptr;
 	private int attributeOffsetPosition;
 	private int attributeOffsetTexture;

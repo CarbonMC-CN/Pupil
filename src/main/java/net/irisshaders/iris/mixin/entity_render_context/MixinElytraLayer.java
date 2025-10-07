@@ -26,7 +26,7 @@ import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 @Mixin(ElytraLayer.class)
 public abstract class MixinElytraLayer<T extends LivingEntity, M extends EntityModel<T>> extends RenderLayer<T, M> {
 	@Unique
-	private static final NamespacedId ELYTRA_CAPE_LOCATION = new NamespacedId("minecraft", "elytra_with_cape");
+	private static final NamespacedId ELYTRA_CAPE_LOCATION = new NamespacedId("minecraft");
 
 	public MixinElytraLayer(RenderLayerParent<T, M> pRenderLayer0) {
 		super(pRenderLayer0);
@@ -44,7 +44,7 @@ public abstract class MixinElytraLayer<T extends LivingEntity, M extends EntityM
 
 		ResourceLocation location = BuiltInRegistries.ITEM.getKey(Items.ELYTRA);
 
-		CapturedRenderingState.INSTANCE.setCurrentRenderedItem(WorldRenderingSettings.INSTANCE.getItemIds().applyAsInt(new NamespacedId(location.getNamespace(), location.getPath())));
+		CapturedRenderingState.INSTANCE.setCurrentRenderedItem(WorldRenderingSettings.INSTANCE.getItemIds().applyAsInt(new NamespacedId(location.getNamespace())));
 	}
 
 	@Inject(method = "render(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;ILnet/minecraft/world/entity/LivingEntity;FFFFFF)V", at = @At(value = "RETURN"))

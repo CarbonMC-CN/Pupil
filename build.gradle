@@ -11,20 +11,20 @@ loom {
 	forge {
 		convertAccessWideners = true
 		mixinConfigs = [
-				"mixins.oculus.json",
-				"mixins.oculus.fantastic.json",
-				"mixins.oculus.vertexformat.json",
-				"mixins.oculus.bettermipmaps.json",
-				"mixins.oculus.fixes.maxfpscrash.json",
-				"oculus-batched-entity-rendering.mixins.json",
-				"mixins.oculus.compat.sodium.json",
-				"mixins.oculus.compat.indigo.json",
-				"mixins.oculus.compat.indium.json",
-				"mixins.oculus.compat.dh.json",
-				"mixins.oculus.compat.pixelmon.json"
+				"mixins.pupil.json",
+				"mixins.pupil.fantastic.json",
+				"mixins.pupil.vertexformat.json",
+				"mixins.pupil.bettermipmaps.json",
+				"mixins.pupil.fixes.maxfpscrash.json",
+				"pupil-batched-entity-rendering.mixins.json",
+				"mixins.pupil.compat.sodium.json",
+				"mixins.pupil.compat.indigo.json",
+				"mixins.pupil.compat.indium.json",
+				"mixins.pupil.compat.dh.json",
+				"mixins.pupil.compat.pixelmon.json"
 		]
 	}
-	mixin.defaultRefmapName = "oculus-mixins-refmap.json"
+	mixin.defaultRefmapName = "pupil-mixins-refmap.json"
 }
 
 configurations {
@@ -69,7 +69,7 @@ loom {
 	runs {
 		client {
 			mods {
-				oculus {
+				pupil {
 					sourceSet sourceSets.desktop
 					sourceSet sourceSets.main
 					sourceSet sourceSets.vendored
@@ -131,7 +131,7 @@ shadowJar {
 
 	from jar.archiveFile
 
-	relocate 'org.apache.commons.collections4', 'oculus.org.apache.commons.collections4'
+	relocate 'org.apache.commons.collections4', 'pupil.org.apache.commons.collections4'
 
 	archiveClassifier.set "shadow"
 

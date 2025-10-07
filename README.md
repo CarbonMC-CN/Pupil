@@ -3,8 +3,8 @@ Shader support for Forge — revived, maintained, and moving forward.
 
 ## What is Pupil?
 
-Pupil is a community-maintained continuation of Oculus, which was an unofficial port of Iris (Fabric shaders) to Forge.  
-Since Oculus development has stalled, Pupil aims to keep shader support alive on Forge for modern Minecraft versions.
+Pupil is a community-maintained continuation of pupil, which was an unofficial port of Iris (Fabric shaders) to Forge.  
+Since pupil development has stalled, Pupil aims to keep shader support alive on Forge for modern Minecraft versions.
 
 ## Why "Pupil"?
 
@@ -52,10 +52,10 @@ The built jar will be in `build/libs/`.
 ## License
 Oculus [LGPL-3.0 license](https://github.com/Asek3/Oculus/blob/1.16.5/LICENSE) 
 
-Pupil is licensed under the LGPL-3.0, same as Oculus and Iris.  
-This is an unofficial continuation — not affiliated with the original Oculus or Iris teams.
+Pupil is licensed under the LGPL-3.0, same as pupil and Iris.  
+This is an unofficial continuation — not affiliated with the original pupil or Iris teams.
 
 ## Thanks
 
-To the original Iris and Oculus contributors for laying the groundwork — this project stands on their shoulders.
+To the original Iris and pupil contributors for laying the groundwork — this project stands on their shoulders.
     

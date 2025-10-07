@@ -1,7 +1,7 @@
 {
   "required": true,
   "minVersion": "0.8",
-  "plugin": "net.irisshaders.iris.compat.pixelmon.mixin.OculusPixelmonCompatMixinPlugin",
+  "plugin": "net.irisshaders.iris.compat.pixelmon.mixin.PupilPixelmonCompatMixinPlugin",
   "package": "net.irisshaders.iris.compat.pixelmon.mixin",
   "compatibilityLevel": "JAVA_8",
   "client": [

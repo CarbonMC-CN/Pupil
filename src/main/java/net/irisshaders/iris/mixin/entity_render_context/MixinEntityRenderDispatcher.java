@@ -45,10 +45,10 @@ public class MixinEntityRenderDispatcher {
 		int intId;
 
 		if (entity instanceof ZombieVillager zombie && zombie.isConverting() && WorldRenderingSettings.INSTANCE.hasVillagerConversionId()) {
-			intId = entityIds.applyAsInt(new NamespacedId("minecraft", "zombie_villager_converting"));
+			intId = entityIds.applyAsInt(new NamespacedId("minecraft"));
 		} else {
 			ResourceLocation entityId = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
-			intId = entityIds.applyAsInt(new NamespacedId(entityId.getNamespace(), entityId.getPath()));
+			intId = entityIds.applyAsInt(new NamespacedId(entityId.getNamespace()));
 		}
 
 		CapturedRenderingState.INSTANCE.setCurrentEntity(intId);

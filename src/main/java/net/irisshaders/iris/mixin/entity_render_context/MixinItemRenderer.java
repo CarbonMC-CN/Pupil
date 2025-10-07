@@ -43,7 +43,7 @@ public abstract class MixinItemRenderer {
 		} else {
 			ResourceLocation location = BuiltInRegistries.ITEM.getKey(pItemRenderer0.getItem());
 
-			CapturedRenderingState.INSTANCE.setCurrentRenderedItem(WorldRenderingSettings.INSTANCE.getItemIds().applyAsInt(new NamespacedId(location.getNamespace(), location.getPath())));
+			CapturedRenderingState.INSTANCE.setCurrentRenderedItem(WorldRenderingSettings.INSTANCE.getItemIds().applyAsInt(new NamespacedId(location.getNamespace())));
 		}
 	}
 
