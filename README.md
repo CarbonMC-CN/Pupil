@@ -22,6 +22,7 @@ This fork is the same: a focused, community-driven project that keeps the light 
 
 - **Forge** (for your Minecraft version)  
 - **Rubidium** or **Embedium** (performance rendering backend)
+Pupil requires [Embeddium](https://www.curseforge.com/minecraft/mc-mods/embeddium) made by FiniteReality!
 
 ## Installation
 
@@ -42,9 +43,12 @@ cd Pupil
 ./gradlew build
 ```
 The built jar will be in `build/libs/`.
-
+## Contributors
+<a href="https://github.com/CarbonMC-CN/Pupil/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=CarbonMC-CN/Pupil" />
+</a>
 ## License
-
+Oculus [LGPL-3.0 license](https://github.com/Asek3/Oculus/blob/1.16.5/LICENSE) 
 Pupil is licensed under the LGPL-3.0, same as Oculus and Iris.  
 This is an unofficial continuation — not affiliated with the original Oculus or Iris teams.
 
