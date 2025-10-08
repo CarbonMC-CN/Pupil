@@ -136,21 +136,17 @@ public abstract class MixinBufferBuilder extends DefaultedVertexConsumer impleme
 			return;
 		}
 
-		// 优化：只有在需要时才注入法线和UV1
 		if (injectNormalAndUV1 && currentElement == DefaultVertexFormat.ELEMENT_NORMAL) {
-			// 避免不必要的内存写入操作
-			if (buffer.getInt(0) != 0) {
-				this.putInt(0, 0);
-			}
+			this.putInt(0, 0);
 			this.nextElement();
 		}
 
 		if (iris$isTerrain) {
-			// ENTITY_ELEMENT - 地形渲染的快速路径
+			// ENTITY_ELEMENT
 			this.putShort(0, currentBlock);
 			this.putShort(2, currentRenderType);
 		} else {
-			// ENTITY_ID_ELEMENT - 实体渲染路径
+			// ENTITY_ID_ELEMENT
 			this.putShort(0, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedEntity());
 			this.putShort(2, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedBlockEntity());
 			this.putShort(4, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedItem());
@@ -158,36 +154,25 @@ public abstract class MixinBufferBuilder extends DefaultedVertexConsumer impleme
 
 		this.nextElement();
 
-		// MID_TEXTURE_ELEMENT - 优化：跳过已知为0的浮点值写入
-		if (buffer.getFloat(0) != 0 || buffer.getFloat(4) != 0) {
-			this.putFloat(0, 0);
-			this.putFloat(4, 0);
-		}
+		// MID_TEXTURE_ELEMENT
+		this.putFloat(0, 0);
+		this.putFloat(4, 0);
 		this.nextElement();
-
-		// TANGENT_ELEMENT - 优化：跳过已知为0的整数值写入
-		if (buffer.getInt(0) != 0) {
-			this.putInt(0, 0);
-		}
+		// TANGENT_ELEMENT
+		this.putInt(0, 0);
 		this.nextElement();
-
-		// MID_BLOCK_ELEMENT - 地形渲染的中间点计算
 		if (iris$isTerrain) {
+			// MID_BLOCK_ELEMENT
 			int posIndex = this.nextElementByte - 48;
 			float x = buffer.getFloat(posIndex);
 			float y = buffer.getFloat(posIndex + 4);
 			float z = buffer.getFloat(posIndex + 8);
-			// 只在需要时计算和存储中间点
-			int midBlock = ExtendedDataHelper.computeMidBlock(x, y, z, currentLocalPosX, currentLocalPosY, currentLocalPosZ);
-			if (buffer.getInt(0) != midBlock) {
-				this.putInt(0, midBlock);
-			}
+			this.putInt(0, ExtendedDataHelper.computeMidBlock(x, y, z, currentLocalPosX, currentLocalPosY, currentLocalPosZ));
 			this.nextElement();
 		}
 
 		vertexCount++;
 
-		// 只有在四边形或三角形完成时才填充扩展数据
 		if (mode == VertexFormat.Mode.QUADS && vertexCount == 4 || mode == VertexFormat.Mode.TRIANGLES && vertexCount == 3) {
 			fillExtendedData(vertexCount);
 		}
@@ -201,85 +186,55 @@ public abstract class MixinBufferBuilder extends DefaultedVertexConsumer impleme
 
 		polygon.setup(buffer, nextElementByte, stride, vertexAmount);
 
-		// 计算中间纹理坐标
 		float midU = 0;
 		float midV = 0;
+
 		for (int vertex = 0; vertex < vertexAmount; vertex++) {
 			midU += polygon.u(vertex);
 			midV += polygon.v(vertex);
 		}
+
 		midU /= vertexAmount;
 		midV /= vertexAmount;
 
-		// 根据渲染类型确定偏移量
-		final int midUOffset = iris$isTerrain ? 16 : 14;
-		final int midVOffset = iris$isTerrain ? 12 : 10;
-		final int normalOffset = 24;
-		final int tangentOffset = iris$isTerrain ? 8 : 6;
+		int midUOffset;
+		int midVOffset;
+		int normalOffset;
+		int tangentOffset;
+		if (iris$isTerrain) {
+			midUOffset = 16;
+			midVOffset = 12;
+			normalOffset = 24;
+			tangentOffset = 8;
+		} else {
+			midUOffset = 14;
+			midVOffset = 10;
+			normalOffset = 24;
+			tangentOffset = 6;
+		}
 
 		if (vertexAmount == 3) {
-			// 三角形渲染路径 - 平滑着色
+			// NormalHelper.computeFaceNormalTri(normal, polygon);	// Removed to enable smooth shaded triangles. Mods rendering triangles with bad normals need to recalculate their normals manually or otherwise shading might be inconsistent.
+
 			for (int vertex = 0; vertex < vertexAmount; vertex++) {
-				final int vertexOffset = nextElementByte - stride * vertex;
-				int packedNormal = buffer.getInt(vertexOffset - normalOffset); // 获取每个顶点的法线
+				int packedNormal = buffer.getInt(nextElementByte - normalOffset - stride * vertex); // retrieve per-vertex normal
 
-				// 计算平滑切线
-				int tangent = NormalHelper.computeTangentSmooth(
-						NormI8.unpackX(packedNormal),
-						NormI8.unpackY(packedNormal),
-						NormI8.unpackZ(packedNormal),
-						polygon);
+				int tangent = NormalHelper.computeTangentSmooth(NormI8.unpackX(packedNormal), NormI8.unpackY(packedNormal), NormI8.unpackZ(packedNormal), polygon);
 
-				// 优化：只有在值不同时才写入内存
-				final int tangentPos = vertexOffset - tangentOffset;
-				if (buffer.getInt(tangentPos) != tangent) {
-					buffer.putInt(tangentPos, tangent);
-				}
-
-				// 只有在值不同时才写入中间纹理坐标
-				final int midUPos = vertexOffset - midUOffset;
-				final int midVPos = vertexOffset - midVOffset;
-				if (buffer.getFloat(midUPos) != midU) {
-					buffer.putFloat(midUPos, midU);
-				}
-				if (buffer.getFloat(midVPos) != midV) {
-					buffer.putFloat(midVPos, midV);
-				}
+				buffer.putFloat(nextElementByte - midUOffset - stride * vertex, midU);
+				buffer.putFloat(nextElementByte - midVOffset - stride * vertex, midV);
+				buffer.putInt(nextElementByte - tangentOffset - stride * vertex, tangent);
 			}
 		} else {
-			// 四边形渲染路径 - 面法线
 			NormalHelper.computeFaceNormal(normal, polygon);
 			int packedNormal = NormI8.pack(normal.x, normal.y, normal.z, 0.0f);
 			int tangent = NormalHelper.computeTangent(normal.x, normal.y, normal.z, polygon);
 
-			// 缓存计算结果，避免重复访问变量
-			final float finalMidU = midU;
-			final float finalMidV = midV;
-			final int finalPackedNormal = packedNormal;
-			final int finalTangent = tangent;
-
 			for (int vertex = 0; vertex < vertexAmount; vertex++) {
-				final int vertexOffset = nextElementByte - stride * vertex;
-
-				// 优化：只有在值不同时才写入内存
-				final int normalPos = vertexOffset - normalOffset;
-				if (buffer.getInt(normalPos) != finalPackedNormal) {
-					buffer.putInt(normalPos, finalPackedNormal);
-				}
-
-				final int tangentPos = vertexOffset - tangentOffset;
-				if (buffer.getInt(tangentPos) != finalTangent) {
-					buffer.putInt(tangentPos, finalTangent);
-				}
-
-				final int midUPos = vertexOffset - midUOffset;
-				final int midVPos = vertexOffset - midVOffset;
-				if (buffer.getFloat(midUPos) != finalMidU) {
-					buffer.putFloat(midUPos, finalMidU);
-				}
-				if (buffer.getFloat(midVPos) != finalMidV) {
-					buffer.putFloat(midVPos, finalMidV);
-				}
+				buffer.putFloat(nextElementByte - midUOffset - stride * vertex, midU);
+				buffer.putFloat(nextElementByte - midVOffset - stride * vertex, midV);
+				buffer.putInt(nextElementByte - normalOffset - stride * vertex, packedNormal);
+				buffer.putInt(nextElementByte - tangentOffset - stride * vertex, tangent);
 			}
 		}
 	}
