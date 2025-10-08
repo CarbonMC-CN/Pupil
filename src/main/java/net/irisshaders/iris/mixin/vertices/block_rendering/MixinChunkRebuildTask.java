@@ -26,7 +26,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Captures and tracks the current block being rendered.
@@ -44,6 +46,12 @@ public class MixinChunkRebuildTask {
 	private BlockSensitiveBufferBuilder lastBufferBuilder;
 
 	@Unique
+	private final Map<BlockState, Short> blockIdCache = new ConcurrentHashMap<>(128);
+	// 块ID缓存大小
+	@Unique
+	private static final int CACHE_SIZE = 1024;
+
+	@Unique
 	private Object2IntMap<BlockState> getBlockStateIds() {
 		return WorldRenderingSettings.INSTANCE.getBlockStateIds();
 	}
@@ -54,7 +62,21 @@ public class MixinChunkRebuildTask {
 			return -1;
 		}
 
-		return (short) blockStateIds.getOrDefault(state, -1);
+		// 首先检查缓存
+		Short cachedId = blockIdCache.get(state);
+		if (cachedId != null) {
+			return cachedId;
+		}
+
+		// 如果缓存未命中，则从blockStateIds中获取
+		short id = (short) blockStateIds.getOrDefault(state, -1);
+
+		// 只有当值有效且缓存未达到最大大小时才进行缓存
+		if (id != -1 && blockIdCache.size() < CACHE_SIZE) {
+			blockIdCache.put(state, id);
+		}
+
+		return id;
 	}
 
 	@Inject(method = RENDER, at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/block/BlockRenderDispatcher;renderLiquid(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/BlockAndTintGetter;Lcom/mojang/blaze3d/vertex/VertexConsumer;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/material/FluidState;)V"), locals = LocalCapture.CAPTURE_FAILHARD)

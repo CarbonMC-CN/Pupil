@@ -15,6 +15,10 @@ import org.lwjgl.system.MemoryUtil;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This class is responsible for abstracting calls to OpenGL and asserting that calls are run on the render thread.
@@ -29,7 +33,8 @@ public class IrisRenderSystem {
 	private static int polygonMode = GL43C.GL_FILL;
 	private static int backupPolygonMode = GL43C.GL_FILL;
 	private static int[] samplers;
-
+	private static final Map<Integer, Map<Integer, Integer>> TEXTURE_PARAM_CACHE = new ConcurrentHashMap<>();
+	private static final int PARAM_CACHE_SIZE = 100;
 	public static void initRenderer() {
 		if (GL.getCapabilities().OpenGL45) {
 			dsaState = new DSACore();
@@ -276,12 +281,13 @@ public class IrisRenderSystem {
 	public static void dispatchCompute(Vector3i workGroups) {
 		GL45C.glDispatchCompute(workGroups.x, workGroups.y, workGroups.z);
 	}
-
+	private static int lastMemoryBarrier = -1;
 	public static void memoryBarrier(int barriers) {
 		RenderSystem.assertOnRenderThreadOrInit();
 
-		if (supportsCompute) {
+		if (supportsCompute && barriers != lastMemoryBarrier) {
 			GL45C.glMemoryBarrier(barriers);
+			lastMemoryBarrier = barriers;
 		}
 	}
 
@@ -343,7 +349,28 @@ public class IrisRenderSystem {
 	public static int createTexture(int target) {
 		return dsaState.createTexture(target);
 	}
+	private static Integer getCachedTexParameter(int texture, int pname) {
+		Map<Integer, Integer> paramMap = TEXTURE_PARAM_CACHE.get(texture);
+		if (paramMap != null) {
+			return paramMap.get(pname);
+		}
+		return null;
+	}
+	private static void cacheTexParameter(int texture, int pname, int value) {
+		// 确保缓存不会无限增长
+		if (TEXTURE_PARAM_CACHE.size() > PARAM_CACHE_SIZE * 2) {
+			// 清理超出大小限制的缓存条目
+			Iterator<Integer> iterator = TEXTURE_PARAM_CACHE.keySet().iterator();
+			int removeCount = TEXTURE_PARAM_CACHE.size() - PARAM_CACHE_SIZE;
+			while (iterator.hasNext() && removeCount > 0) {
+				iterator.next();
+				iterator.remove();
+				removeCount--;
+			}
+		}
 
+		TEXTURE_PARAM_CACHE.computeIfAbsent(texture, k -> new HashMap<>()).put(pname, value);
+	}
 	public static void bindTextureForSetup(int glType, int glId) {
 		GL30C.glBindTexture(glType, glId);
 	}
@@ -605,9 +632,16 @@ public class IrisRenderSystem {
 
 		@Override
 		public int getTexParameteri(int texture, int target, int pname) {
+			Integer cachedValue = getCachedTexParameter(texture, pname);
+			if (cachedValue != null) {
+				return cachedValue;
+			}
 			bindTextureForSetup(target, texture);
-			return GL32C.glGetTexParameteri(target, pname);
+			int value = GL32C.glGetTexParameteri(target, pname);
+			cacheTexParameter(texture, pname, value);
+			return value;
 		}
+
 
 		@Override
 		public void copyTexSubImage2D(int destTexture, int target, int i, int i1, int i2, int i3, int i4, int width, int height) {
@@ -619,9 +653,13 @@ public class IrisRenderSystem {
 
 		@Override
 		public void bindTextureToUnit(int target, int unit, int texture) {
+			if (GlStateManagerAccessor.getTEXTURES()[unit].binding == texture) {
+				return;
+			}
 			int activeTexture = GlStateManager._getActiveTexture();
 			GlStateManager._activeTexture(GL30C.GL_TEXTURE0 + unit);
 			bindTextureForSetup(target, texture);
+			GlStateManagerAccessor.getTEXTURES()[unit].binding = texture;
 			GlStateManager._activeTexture(activeTexture);
 		}
 

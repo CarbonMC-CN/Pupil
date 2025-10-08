@@ -87,7 +87,9 @@ public class ProgramSamplers {
 			notifier.setListener(null);
 		}
 	}
-
+	public boolean hasActiveSamplers() {
+		return !samplerBindings.isEmpty();
+	}
 	public static final class Builder implements SamplerHolder {
 		private final int program;
 		private final ImmutableSet<Integer> reservedTextureUnits;
