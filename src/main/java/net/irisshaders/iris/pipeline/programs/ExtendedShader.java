@@ -38,6 +38,7 @@ import org.lwjgl.opengl.GL30C;
 import org.lwjgl.opengl.KHRDebug;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandle;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -142,7 +143,7 @@ public class ExtendedShader extends ShaderInstance implements ShaderInstanceInte
 
 		if (intensitySwizzle) {
 			IrisRenderSystem.texParameteriv(RenderSystem.getShaderTexture(0), TextureType.TEXTURE_2D.getGlType(), ARBTextureSwizzle.GL_TEXTURE_SWIZZLE_RGBA,
-				new int[]{GL30C.GL_RED, GL30C.GL_RED, GL30C.GL_RED, GL30C.GL_RED});
+					new int[]{GL30C.GL_RED, GL30C.GL_RED, GL30C.GL_RED, GL30C.GL_RED});
 		}
 
 		IrisRenderSystem.bindTextureToUnit(TextureType.TEXTURE_2D.getGlType(), IrisSamplers.ALBEDO_TEXTURE_UNIT, RenderSystem.getShaderTexture(0));
@@ -275,6 +276,9 @@ public class ExtendedShader extends ShaderInstance implements ShaderInstanceInte
 			}
 		});
 	}
+
+	@Override
+	public void setShouldSkip(MethodHandle s) {}
 
 	public Program getGeometry() {
 		return this.geometry;

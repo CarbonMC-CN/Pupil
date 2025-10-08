@@ -22,6 +22,7 @@ public class PackDirectives {
 	private final PackRenderTargetDirectives renderTargetDirectives;
 	private final PackShadowDirectives shadowDirectives;
 	private final float drynessHalfLife;
+	private int fallbackTex;
 	private boolean supportsColorCorrection;
 	private int noiseTextureResolution;
 	private float sunPathRotation;
@@ -89,6 +90,9 @@ public class PackDirectives {
 		particleRenderingSettings = properties.getParticleRenderingSettings();
 		textureMap = properties.getCustomTexturePatching();
 		bufferObjects = properties.getBufferObjects();
+		fallbackTex = properties.getFallbackTex();
+
+
 	}
 
 	PackDirectives(Set<Integer> supportedRenderTargets, PackDirectives directives) {
@@ -106,6 +110,7 @@ public class PackDirectives {
 		particleRenderingSettings = directives.particleRenderingSettings;
 		textureMap = directives.textureMap;
 		bufferObjects = directives.bufferObjects;
+		fallbackTex = directives.fallbackTex;
 	}
 
 	private static float clamp(float val, float lo, float hi) {
@@ -233,25 +238,25 @@ public class PackDirectives {
 		shadowDirectives.acceptDirectives(directives);
 
 		directives.acceptConstIntDirective("noiseTextureResolution",
-			noiseTextureResolution -> this.noiseTextureResolution = noiseTextureResolution);
+				noiseTextureResolution -> this.noiseTextureResolution = noiseTextureResolution);
 
 		directives.acceptConstFloatDirective("sunPathRotation",
-			sunPathRotation -> this.sunPathRotation = sunPathRotation);
+				sunPathRotation -> this.sunPathRotation = sunPathRotation);
 
 		directives.acceptConstFloatDirective("ambientOcclusionLevel",
-			ambientOcclusionLevel -> this.ambientOcclusionLevel = clamp(ambientOcclusionLevel, 0.0f, 1.0f));
+				ambientOcclusionLevel -> this.ambientOcclusionLevel = clamp(ambientOcclusionLevel, 0.0f, 1.0f));
 
 		directives.acceptConstFloatDirective("wetnessHalflife",
-			wetnessHalfLife -> this.wetnessHalfLife = wetnessHalfLife);
+				wetnessHalfLife -> this.wetnessHalfLife = wetnessHalfLife);
 
 		directives.acceptConstFloatDirective("drynessHalflife",
-			wetnessHalfLife -> this.wetnessHalfLife = wetnessHalfLife);
+				wetnessHalfLife -> this.wetnessHalfLife = wetnessHalfLife);
 
 		directives.acceptConstFloatDirective("eyeBrightnessHalflife",
-			eyeBrightnessHalfLife -> this.eyeBrightnessHalfLife = eyeBrightnessHalfLife);
+				eyeBrightnessHalfLife -> this.eyeBrightnessHalfLife = eyeBrightnessHalfLife);
 
 		directives.acceptConstFloatDirective("centerDepthHalflife",
-			centerDepthHalfLife -> this.centerDepthHalfLife = centerDepthHalfLife);
+				centerDepthHalfLife -> this.centerDepthHalfLife = centerDepthHalfLife);
 	}
 
 	public ImmutableMap<Integer, Boolean> getExplicitFlips(String pass) {
@@ -280,7 +285,7 @@ public class PackDirectives {
 				explicitFlips.put(index, shouldFlip);
 			} else {
 				Iris.logger.warn("Unknown buffer with ID " + buffer + " specified in flip directive for pass "
-					+ pass);
+						+ pass);
 			}
 		});
 
@@ -311,5 +316,9 @@ public class PackDirectives {
 		}
 
 		return scale;
+	}
+
+	public int getFallbackTex() {
+		return fallbackTex;
 	}
 }
