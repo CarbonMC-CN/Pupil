@@ -37,11 +37,14 @@ public class BlockMaterialMapping {
 		Map<Holder.Reference<Block>, ChunkRenderTypeSet> blockTypeIds = new Object2ObjectOpenHashMap<>();
 
 		blockPropertiesMap.forEach((id, blockType) -> {
-			ResourceLocation resourceLocation = new ResourceLocation(id.getNamespace(), id.getName());
-
-			ForgeRegistries.BLOCKS.getDelegate(resourceLocation).ifPresent(
-					block -> blockTypeIds.put(block, ChunkRenderTypeSet.of(convertBlockToRenderType(blockType)))
-			);
+			try {
+				ResourceLocation resourceLocation = new ResourceLocation(id.getNamespace(), id.getName());
+				ForgeRegistries.BLOCKS.getDelegate(resourceLocation).ifPresent(
+						block -> blockTypeIds.put(block, ChunkRenderTypeSet.of(convertBlockToRenderType(blockType)))
+				);
+			} catch (Exception e) {
+				Iris.logger.warn("[Pupil] Skipping invalid block type mapping: '{}:{}'", id.getNamespace(), id.getName());
+			}
 		});
 
 		return blockTypeIds;
@@ -63,10 +66,12 @@ public class BlockMaterialMapping {
 	private static void addBlockStates(BlockEntry entry, Object2IntMap<BlockState> idMap, int intId) {
 		NamespacedId id = entry.id();
 		ResourceLocation resourceLocation;
+
 		try {
 			resourceLocation = new ResourceLocation(id.getNamespace(), id.getName());
 		} catch (Exception exception) {
-			throw new IllegalStateException("Failed to get entry for " + intId, exception);
+			Iris.logger.warn("[Pupil] Skipping invalid ResourceLocation for block.{}: '{}:{}'", intId, id.getNamespace(), id.getName());
+			return;
 		}
 
 		Optional<Holder.Reference<Block>> delegateOpt = ForgeRegistries.BLOCKS.getDelegate(resourceLocation);

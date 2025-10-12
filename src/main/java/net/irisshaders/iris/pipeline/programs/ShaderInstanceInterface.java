@@ -8,5 +8,6 @@ import java.lang.invoke.MethodHandle;
 
 public interface ShaderInstanceInterface {
 	void iris$createExtraShaders(ResourceProvider factory, ResourceLocation name) throws IOException;
+
 	void setShouldSkip(MethodHandle s);
 }

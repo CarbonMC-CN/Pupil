@@ -16,14 +16,7 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20C;
 import org.lwjgl.opengl.GL30C;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -55,9 +48,11 @@ public class StandardMacros {
 		if (LoadingModList.get().getModFileById("distanthorizons") != null && DHCompat.hasRenderingEnabled()) {
 			define(standardDefines, "DISTANT_HORIZONS");
 		}
+
 		if (Iris.getIrisConfig().shouldAllowUnknownShaders()) {
 			define(standardDefines, "ALLOWS_UNKNOWN_SHADERS");
 		}
+
 		define(standardDefines, "DH_BLOCK_UNKNOWN", String.valueOf(0));
 		define(standardDefines, "DH_BLOCK_LEAVES", String.valueOf(1));
 		define(standardDefines, "DH_BLOCK_STONE", String.valueOf(2));

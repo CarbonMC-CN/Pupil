@@ -194,10 +194,10 @@ public class ShadowRenderer {
 
 	private void configureSamplingSettings(PackShadowDirectives shadowDirectives) {
 		final ImmutableList<PackShadowDirectives.DepthSamplingSettings> depthSamplingSettings =
-			shadowDirectives.getDepthSamplingSettings();
+				shadowDirectives.getDepthSamplingSettings();
 
 		final Int2ObjectMap<PackShadowDirectives.SamplingSettings> colorSamplingSettings =
-			shadowDirectives.getColorSamplingSettings();
+				shadowDirectives.getColorSamplingSettings();
 
 		RenderSystem.activeTexture(GL20C.GL_TEXTURE4);
 
@@ -226,7 +226,7 @@ public class ShadowRenderer {
 		// They expected the driver to put the depth value in z, but it's supposed to only
 		// be available in r. So we set up the swizzle to fix that.
 		IrisRenderSystem.texParameteriv(glTextureId, GL20C.GL_TEXTURE_2D, ARBTextureSwizzle.GL_TEXTURE_SWIZZLE_RGBA,
-			new int[]{GL30C.GL_RED, GL30C.GL_RED, GL30C.GL_RED, GL30C.GL_ONE});
+				new int[]{GL30C.GL_RED, GL30C.GL_RED, GL30C.GL_RED, GL30C.GL_ONE});
 
 		configureSampler(glTextureId, settings);
 	}
@@ -279,7 +279,7 @@ public class ShadowRenderer {
 
 			if (distance <= 0 || distance > Minecraft.getInstance().options.getEffectiveRenderDistance() * 16) {
 				distanceInfo = "render distance = " + Minecraft.getInstance().options.getEffectiveRenderDistance() * 16
-					+ " blocks ";
+						+ " blocks ";
 				distanceInfo += Minecraft.getInstance().isLocalServer() ? "(capped by normal render distance)" : "(capped by normal/server render distance)";
 				cullingInfo = "disabled " + reason;
 				return holder.setInfo(new NonCullingFrustum(), distanceInfo, cullingInfo);
@@ -307,7 +307,7 @@ public class ShadowRenderer {
 
 			if (distance >= Minecraft.getInstance().options.getEffectiveRenderDistance() * 16 && !isReversed) {
 				distanceInfo = "render distance = " + Minecraft.getInstance().options.getEffectiveRenderDistance() * 16
-					+ " blocks ";
+						+ " blocks ";
 				distanceInfo += Minecraft.getInstance().isLocalServer() ? "(capped by normal render distance)" : "(capped by normal/server render distance)";
 				boxCuller = null;
 			} else {
@@ -326,16 +326,16 @@ public class ShadowRenderer {
 			Vector4f shadowLightPosition = new CelestialUniforms(sunPathRotation).getShadowLightPositionInWorldSpace();
 
 			Vector3f shadowLightVectorFromOrigin =
-				new Vector3f(shadowLightPosition.x(), shadowLightPosition.y(), shadowLightPosition.z());
+					new Vector3f(shadowLightPosition.x(), shadowLightPosition.y(), shadowLightPosition.z());
 
 			shadowLightVectorFromOrigin.normalize();
 
 			if (isReversed) {
 				return holder.setInfo(new ReversedAdvancedShadowCullingFrustum(CapturedRenderingState.INSTANCE.getGbufferModelView(),
-					(shouldRenderDH && DHCompat.hasRenderingEnabled()) ? DHCompat.getProjection() : CapturedRenderingState.INSTANCE.getGbufferProjection(), shadowLightVectorFromOrigin, boxCuller, new BoxCuller(halfPlaneLength * renderMultiplier)), distanceInfo, cullingInfo);
+						(shouldRenderDH && DHCompat.hasRenderingEnabled()) ? DHCompat.getProjection() : CapturedRenderingState.INSTANCE.getGbufferProjection(), shadowLightVectorFromOrigin, boxCuller, new BoxCuller(halfPlaneLength * renderMultiplier)), distanceInfo, cullingInfo);
 			} else {
 				return holder.setInfo(new AdvancedShadowCullingFrustum(CapturedRenderingState.INSTANCE.getGbufferModelView(),
-					(shouldRenderDH && DHCompat.hasRenderingEnabled()) ? DHCompat.getProjection() : CapturedRenderingState.INSTANCE.getGbufferProjection(), shadowLightVectorFromOrigin, boxCuller), distanceInfo, cullingInfo);
+						(shouldRenderDH && DHCompat.hasRenderingEnabled()) ? DHCompat.getProjection() : CapturedRenderingState.INSTANCE.getGbufferProjection(), shadowLightVectorFromOrigin, boxCuller), distanceInfo, cullingInfo);
 			}
 		}
 
@@ -691,7 +691,7 @@ public class ShadowRenderer {
 			messages.add("[" + Iris.MODNAME + "] Shadow Distance Terrain: " + terrainFrustumHolder.getDistanceInfo() + " Entity: " + entityFrustumHolder.getDistanceInfo());
 			messages.add("[" + Iris.MODNAME + "] Shadow Culling Terrain: " + terrainFrustumHolder.getCullingInfo() + " Entity: " + entityFrustumHolder.getCullingInfo());
 			messages.add("[" + Iris.MODNAME + "] Shadow Terrain: " + debugStringTerrain
-				+ (shouldRenderTerrain ? "" : " (no terrain) ") + (shouldRenderTranslucent ? "" : "(no translucent)"));
+					+ (shouldRenderTerrain ? "" : " (no terrain) ") + (shouldRenderTranslucent ? "" : "(no translucent)"));
 			messages.add("[" + Iris.MODNAME + "] Shadow Entities: " + getEntitiesDebugString());
 			messages.add("[" + Iris.MODNAME + "] Shadow Block Entities: " + getBlockEntitiesDebugString());
 
