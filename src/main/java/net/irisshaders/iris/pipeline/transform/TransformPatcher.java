@@ -65,7 +65,7 @@ public class TransformPatcher {
 		public boolean isTokenAllowed(Token token) {
 			if (!super.isTokenAllowed(token)) {
 				throw new IllegalArgumentException("Unparsed preprocessor directives such as '" + token.getText()
-					+ "' may not be present at this stage of shader processing!");
+						+ "' may not be present at this stage of shader processing!");
 			}
 			return true;
 		}
@@ -75,6 +75,7 @@ public class TransformPatcher {
 		transformer = new EnumASTTransformer<>(PatchShaderType.class) {
 			{
 				setRootSupplier(RootSupplier.PREFIX_UNORDERED_ED_EXACT);
+				setParsingCacheStrategy(ParsingCacheStrategy.TWO_TIER);
 			}
 
 			@Override
@@ -84,7 +85,7 @@ public class TransformPatcher {
 				Matcher matcher = versionPattern.matcher(input);
 				if (!matcher.find()) {
 					throw new IllegalArgumentException(
-						"No #version directive found in source code! See debugging.md for more information.");
+							"No #version directive found in source code! See debugging.md for more information.");
 				}
 				transformer.getLexer().version = Version.fromNumber(Integer.parseInt(matcher.group(1)));
 
@@ -104,13 +105,13 @@ public class TransformPatcher {
 
 				// check for illegal references to internal Iris shader interfaces
 				internalPrefixes.stream()
-					.flatMap(root.getPrefixIdentifierIndex()::prefixQueryFlat)
-					.findAny()
-					.ifPresent(id -> {
-						throw new IllegalArgumentException(
-							"Detected a potential reference to unstable and internal Iris shader interfaces (iris_, irisMain and moj_import). This isn't currently supported. Violation: "
-								+ id.getName() + ". See debugging.md for more information.");
-					});
+						.flatMap(root.getPrefixIdentifierIndex()::prefixQueryFlat)
+						.findAny()
+						.ifPresent(id -> {
+							throw new IllegalArgumentException(
+									"Detected a potential reference to unstable and internal Iris shader interfaces (iris_, irisMain and moj_import). This isn't currently supported. Violation: "
+											+ id.getName() + ". See debugging.md for more information.");
+						});
 
 				root.indexBuildSession(() -> {
 					VersionStatement versionStatement = tree.getVersionStatement();
@@ -179,7 +180,7 @@ public class TransformPatcher {
 						}
 					}
 					TextureTransformer.transform(transformer, tree, root,
-						parameters.getTextureStage(), parameters.getTextureMap());
+							parameters.getTextureStage(), parameters.getTextureMap());
 					CompatibilityTransformer.transformEach(transformer, tree, root, parameters);
 				});
 			}
@@ -191,9 +192,9 @@ public class TransformPatcher {
 	}
 
 	private static Map<PatchShaderType, String> transformInternal(
-		String name,
-		Map<PatchShaderType, String> inputs,
-		Parameters parameters) {
+			String name,
+			Map<PatchShaderType, String> inputs,
+			Parameters parameters) {
 		try {
 			return transformer.transform(inputs, parameters);
 		} catch (TransformationException | ParsingException | IllegalStateException | IllegalArgumentException e) {
@@ -269,51 +270,51 @@ public class TransformPatcher {
 	}
 
 	public static Map<PatchShaderType, String> patchVanilla(
-		String name, String vertex, String geometry, String tessControl, String tessEval, String fragment,
-		AlphaTest alpha, boolean isLines,
-		boolean hasChunkOffset,
-		ShaderAttributeInputs inputs,
-		Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap) {
+			String name, String vertex, String geometry, String tessControl, String tessEval, String fragment,
+			AlphaTest alpha, boolean isLines,
+			boolean hasChunkOffset,
+			ShaderAttributeInputs inputs,
+			Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap) {
 		return transform(name, vertex, geometry, tessControl, tessEval, fragment,
-			new VanillaParameters(Patch.VANILLA, textureMap, alpha, isLines, hasChunkOffset, inputs, geometry != null, tessControl != null || tessEval != null));
+				new VanillaParameters(Patch.VANILLA, textureMap, alpha, isLines, hasChunkOffset, inputs, geometry != null, tessControl != null || tessEval != null));
 	}
 
 
 	public static Map<PatchShaderType, String> patchDHTerrain(
-		String name, String vertex, String tessControl, String tessEval, String geometry, String fragment,
-		Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap) {
+			String name, String vertex, String tessControl, String tessEval, String geometry, String fragment,
+			Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap) {
 		return transform(name, vertex, geometry, tessControl, tessEval, fragment,
-			new DHParameters(Patch.DH_TERRAIN, textureMap));
+				new DHParameters(Patch.DH_TERRAIN, textureMap));
 	}
 
 
 	public static Map<PatchShaderType, String> patchDHGeneric(
-		String name, String vertex, String tessControl, String tessEval, String geometry, String fragment,
-		Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap) {
+			String name, String vertex, String tessControl, String tessEval, String geometry, String fragment,
+			Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap) {
 		return transform(name, vertex, geometry, tessControl, tessEval, fragment,
-			new DHParameters(Patch.DH_GENERIC, textureMap));
+				new DHParameters(Patch.DH_GENERIC, textureMap));
 	}
 
 	public static Map<PatchShaderType, String> patchSodium(String name, String vertex, String geometry, String tessControl, String tessEval, String fragment,
 														   AlphaTest alpha, ShaderAttributeInputs inputs,
 														   Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap) {
 		return transform(name, vertex, geometry, tessControl, tessEval, fragment,
-			new SodiumParameters(Patch.SODIUM, textureMap, alpha, inputs));
+				new SodiumParameters(Patch.SODIUM, textureMap, alpha, inputs));
 	}
 
 	public static Map<PatchShaderType, String> patchComposite(
-		String name, String vertex, String geometry, String fragment,
-		TextureStage stage,
-		Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap) {
+			String name, String vertex, String geometry, String fragment,
+			TextureStage stage,
+			Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap) {
 		return transform(name, vertex, geometry, null, null, fragment, new TextureStageParameters(Patch.COMPOSITE, stage, textureMap));
 	}
 
 	public static String patchCompute(
-		String name, String compute,
-		TextureStage stage,
-		Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap) {
+			String name, String compute,
+			TextureStage stage,
+			Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap) {
 		return transformCompute(name, compute, new ComputeParameters(Patch.COMPUTE, stage, textureMap))
-			.getOrDefault(PatchShaderType.COMPUTE, null);
+				.getOrDefault(PatchShaderType.COMPUTE, null);
 	}
 
 	private static class CacheKey {
